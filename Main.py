@@ -1,47 +1,62 @@
-# Nesta etapa, estou importando as bibliotecas necessárias para fazer todo o código funcionar.
+# Importação das bibliotecas necessárias
 import easyocr
-import pandas
+import pandas as pd
 import os
 import tkinter as tk
 from tkinter import filedialog
-import PyPDF2
 import fitz  # PyMuPDF
 
+# Criando leitor OCR (EasyOCR)
+leitor_ocr = easyocr.Reader(['pt'])  # Define o idioma para português
 
-# Adicionando as funções que usarei para realizar a leitura da imagem
-def selecionar_imagens():
+# Função para selecionar arquivos (PDF e imagens)
+def selecionar_arquivos():
     root = tk.Tk()
     root.withdraw()
-    caminho_imagens = filedialog.askopenfilenames(filetypes=[("Imagens", "*.png; *.jpg; *.jpeg; *.pdf")]) #aqui, podemos alterar para o código receber as imagens que desejamos
-    return caminho_imagens # retornamos o nosso caminho de imagens
+    caminho_arquivos = filedialog.askopenfilenames(filetypes=[("Imagens e PDFs", "*.png; *.jpg; *.jpeg; *.pdf")])
+    return list(caminho_arquivos)  # Retorna os caminhos selecionados
 
-def selecionar_pdf(caminho_pdf):
+# Função para extrair texto de PDFs
+def extrair_texto_pdf(caminho_pdf):
     texto = ""
     doc = fitz.open(caminho_pdf)
     for pagina in doc:
-        texto += pagina.get_text() # Aqui, é extraído o texto de cada imagem
+        texto += pagina.get_text() + "\n"  # Adiciona quebra de linha entre páginas
     return texto  
 
-def processamento(arquivos):
-    for arquivos in arquivos:
-        if arquivos.lower().endswith(('png', 'jpg', 'jpeg')):
-            resultado = leitura.readtext(arquivo)
-            for item in resultado:
-                print(f"Texto extraído da imagem: {item[1]}")
-        elif arquivos.lower().endswhith('pdf'):
-            texto_pdf = selecionar_pdf(arquivo)
-            print(f"Texto extraído do PDF: \n{texto_pdf}")
+# Função para extrair texto de imagens usando EasyOCR
+def extrair_texto_imagem(caminho_imagem):
+    resultado = leitor_ocr.readtext(caminho_imagem, detail=0)  # Extrai apenas o texto, sem coordenadas
+    return "\n".join(resultado)  # Junta os textos detectados em linhas
+
+# Processamento dos arquivos
+def processar_arquivos(arquivos):
+    resultados = []  # Lista para armazenar os textos extraídos
+
+    for arquivo in arquivos:
+        if arquivo.lower().endswith(".pdf"):
+            texto_extraido = extrair_texto_pdf(arquivo)
+        elif arquivo.lower().endswith((".png", ".jpg", ".jpeg")):
+            texto_extraido = extrair_texto_imagem(arquivo)
         else:
-            print(f"Arquivo {arquivos} não suportado")
+            texto_extraido = "Formato não suportado"
 
+        # Adiciona os dados em um dicionário
+        resultados.append({"Arquivo": os.path.basename(arquivo), "Texto Extraído": texto_extraido})
 
-# Definindo o idioma em que a lib easyoct irá ler
-leitura = easyocr.Reader(['pt'])
+    return resultados
 
-caminho_imagens = selecionar_imagens()
+# Função para salvar em Excel
+def salvar_em_excel(dados, nome_arquivo="texto_extraido.xlsx"):
+    df = pd.DataFrame(dados)  # Cria um DataFrame
+    df.to_excel(nome_arquivo, index=False)  # Salva em arquivo Excel
+    print(f"\nOs textos foram salvos em '{nome_arquivo}'.")
 
-# Selecionando os arquivos
-arquivos = selecionar_imagens()
+# Início do processo
+arquivos_selecionados = selecionar_arquivos()
 
-# Processando os arquivos selecionados
-processamento(arquivos)
+if arquivos_selecionados:
+    dados_extraidos = processar_arquivos(arquivos_selecionados)
+    salvar_em_excel(dados_extraidos)
+else:
+    print("Nenhum arquivo foi selecionado.")
