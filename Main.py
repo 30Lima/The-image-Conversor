@@ -35,3 +35,13 @@ def processamento(arquivos):
             print(f"Arquivo {arquivos} não suportado")
 
 
+# Definindo o idioma em que a lib easyoct irá ler
+leitura = easyocr.Reader(['pt'])
+
+caminho_imagens = selecionar_imagens()
+
+# Selecionando os arquivos
+arquivos = selecionar_imagens()
+
+# Processando os arquivos selecionados
+processamento(arquivos)
