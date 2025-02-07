@@ -4,4 +4,6 @@ import pandas
 import os
 import tkinter as tk
 from tkinter import filedialog
+import PyPDF2
+import fitz  # PyMuPDF
 
